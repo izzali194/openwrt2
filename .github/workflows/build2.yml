@@ -1,0 +1,40 @@
+name: Build OpenWrt
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt install -y build-essential ccache ecj fastjar file g++ gawk \
+  gettext git java-propose-classpath libncurses5-dev libssl-dev python3 \
+  unzip wget zlib1g-dev subversion flex uglifyjs \
+  gcc-multilib g++-multilib p7zip p7zip-full msmtp \
+  texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf \
+  automake libtool autopoint device-tree-compiler gperf
+
+      - name: Update feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure
+        run: |
+          make defconfig
+          # لو عندك ملف .config جاهز حطه هنا
+
+      - name: Build
+        run: |
+          make -j$(nproc) V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-firmware
+          path: bin/targets/
